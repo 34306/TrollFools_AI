@@ -1,7 +1,7 @@
 # TrollFools_AI
 
 In-place tweak injection with insert_dylib with TrollStore Lite.  
-Proudly written in SwiftUI, supportsupport **AI** devicesdevices, onon iOS 17.5.1 and lower.
+Proudly written in SwiftUI, support **AI** devices, onon iOS 17.5.1 and lower.
 
 Tested and working fine on iOS 17.5.1, iPhone 14 Pro Max.
 
