@@ -15,11 +15,13 @@ struct SettingsView: View {
         _useWeakReference = AppStorage(wrappedValue: true, "UseWeakReference-\(app.bid)")
         _preferMainExecutable = AppStorage(wrappedValue: false, "PreferMainExecutable-\(app.bid)")
         _injectStrategy = AppStorage(wrappedValue: .lexicographic, "InjectStrategy-\(app.bid)")
+        _injectCydiaSubstrate = AppStorage(wrappedValue: true, "InjectCydiaSubstrate-\(app.bid)")
     }
 
     @AppStorage var useWeakReference: Bool
     @AppStorage var preferMainExecutable: Bool
     @AppStorage var injectStrategy: InjectorV3.Strategy
+    @AppStorage var injectCydiaSubstrate: Bool
 
     @StateObject var viewControllerHost = ViewControllerHost()
 
@@ -34,6 +36,7 @@ struct SettingsView: View {
                     }
                     Toggle(NSLocalizedString("Prefer Main Executable", comment: ""), isOn: $preferMainExecutable)
                     Toggle(NSLocalizedString("Use Weak Reference", comment: ""), isOn: $useWeakReference)
+                    Toggle(NSLocalizedString("Inject CydiaSubstrate", comment: ""), isOn: $injectCydiaSubstrate)
                 } header: {
                     paddedHeaderFooterText(NSLocalizedString("Injection", comment: ""))
                 } footer: {

@@ -15,6 +15,12 @@ struct TrollFoolsApp: SwiftUI.App {
 
     init() {
         try? FileManager.default.removeItem(at: InjectorV3.temporaryRoot)
+        
+        // Resign all binaries in app bundle with ent.xml when app starts
+        // This is needed because TrollStore resigns all binaries, so we need to resign them again
+        DispatchQueue.global(qos: .userInitiated).async {
+            InjectorV3.resignAppBundleBinaries()
+        }
     }
 
     var body: some Scene {

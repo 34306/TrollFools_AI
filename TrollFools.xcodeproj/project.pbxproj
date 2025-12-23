@@ -90,6 +90,7 @@
 		CC5E54BF2C4E131000FDE4A8 /* libxar.1.dylib in Resources */ = {isa = PBXBuildFile; fileRef = CC5E54BB2C4E12F900FDE4A8 /* libxar.1.dylib */; };
 		CC60FBEC2CC50F5A00A6D21A /* BartyCrouch.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC60FBEB2CC50F5A00A6D21A /* BartyCrouch.swift */; };
 		CC61A87C2C4A677B003BD9A0 /* CydiaSubstrate.framework.zip in Resources */ = {isa = PBXBuildFile; fileRef = CC61A87B2C4A677B003BD9A0 /* CydiaSubstrate.framework.zip */; };
+		CC3485182C71B219007E0E29 /* ent.xml in Resources */ = {isa = PBXBuildFile; fileRef = CC3485172C71B219007E0E29 /* ent.xml */; };
 		CC80616D2E71632E00B1AA3E /* CheckUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80616B2E71632E00B1AA3E /* CheckUpdateManager.swift */; };
 		CC80616E2E71632E00B1AA3E /* CodableStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80616C2E71632E00B1AA3E /* CodableStorage.swift */; };
 		CC8061712E71636500B1AA3E /* DpkgVersion in Frameworks */ = {isa = PBXBuildFile; productRef = CC8061702E71636500B1AA3E /* DpkgVersion */; };
@@ -194,6 +195,7 @@
 		CC3485142C71B219007E0E28 /* TrollFools.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = TrollFools.entitlements; sourceTree = "<group>"; };
 		CC3485152C71B219007E0E28 /* Version.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		CC3485162C71B219007E0E28 /* Version.Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Version.Debug.xcconfig; sourceTree = "<group>"; };
+		CC3485172C71B219007E0E29 /* ent.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = ent.xml; sourceTree = "<group>"; };
 		CC5E54BB2C4E12F900FDE4A8 /* libxar.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libxar.1.dylib; sourceTree = "<group>"; };
 		CC5E54BC2C4E12F900FDE4A8 /* install_name_tool */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = install_name_tool; sourceTree = "<group>"; };
 		CC60FBE92CC4E6C400A6D21A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -390,6 +392,7 @@
 				CC3485142C71B219007E0E28 /* TrollFools.entitlements */,
 				CC3485152C71B219007E0E28 /* Version.xcconfig */,
 				CC3485162C71B219007E0E28 /* Version.Debug.xcconfig */,
+				CC3485172C71B219007E0E29 /* ent.xml */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -590,6 +593,7 @@
 				CC61A87C2C4A677B003BD9A0 /* CydiaSubstrate.framework.zip in Resources */,
 				CCF4705E2C4A464B008D8197 /* Assets.xcassets in Resources */,
 				CCF470692C4A4919008D8197 /* Localizable.strings in Resources */,
+				CC3485182C71B219007E0E29 /* ent.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -612,7 +616,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$CODE_SIGNING_ALLOWED\" = \"NO\" ]; then\n  ldid -S${CODE_SIGN_ENTITLEMENTS} ${CODESIGNING_FOLDER_PATH}\nfi\n";
+			shellScript = "if [ \"$CODE_SIGNING_ALLOWED\" = \"NO\" ]; then\n  if [ -f \"${CODESIGNING_FOLDER_PATH}\" ]; then\n    ldid -S${CODE_SIGN_ENTITLEMENTS} \"${CODESIGNING_FOLDER_PATH}\" || true\n  fi\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

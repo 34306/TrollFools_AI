@@ -64,21 +64,38 @@ extension InjectorV3 {
             return
         }
 
+        // Standardize load commands to CydiaSubstrate only if injecting CydiaSubstrate
+        if injectCydiaSubstrate {
+            try assetURLs.forEach {
+                try standardizeLoadCommandDylibToSubstrate($0)
+            }
+        } else {
+            // Remove CydiaSubstrate dependencies if not injecting CydiaSubstrate
+            try assetURLs.forEach {
+                try removeCydiaSubstrateDependencies($0)
+            }
+        }
+        
         try assetURLs.forEach {
-            try standardizeLoadCommandDylibToSubstrate($0)
             try applyCoreTrustBypass($0)
         }
 
-        let substrateFwkURL = try prepareSubstrate()
         guard let targetMachO = try locateAvailableMachO() else {
             DDLogError("All Mach-Os are protected", ddlog: logger)
 
-            throw Error.generic(NSLocalizedString("No eligible framework found.\n\nIt is usually not a bug with TrollFools itself, but rather with the target app. You may re-install that from App Store. You can’t use TrollFools with apps installed via “Asspp” or tweaks like “NoAppThinning”.", comment: ""))
+            throw Error.generic(NSLocalizedString("No eligible framework found.\n\nIt is usually not a bug with TrollFools itself, but rather with the target app. You may re-install that from App Store. You can't use TrollFools with apps installed via \"Asspp\" or tweaks like \"NoAppThinning\".", comment: ""))
         }
 
         DDLogInfo("Best matched Mach-O is \(targetMachO.path)", ddlog: logger)
 
-        let resourceURLs: [URL] = [substrateFwkURL] + assetURLs
+        var resourceURLs: [URL] = assetURLs
+        
+        // Inject CydiaSubstrate framework only if enabled
+        if injectCydiaSubstrate {
+            let substrateFwkURL = try prepareSubstrate()
+            resourceURLs.insert(substrateFwkURL, at: 0)
+        }
+        
         try makeAlternate(targetMachO)
         do {
             try copyfiles(resourceURLs)
@@ -139,6 +156,45 @@ extension InjectorV3 {
         for dylib in dylibs {
             if Self.ignoredDylibAndFrameworkNames.firstIndex(where: { dylib.lowercased().hasSuffix("/\($0)") }) != nil {
                 try cmdChangeLoadCommandDylib(machO, from: dylib, to: "@executable_path/Frameworks/\(Self.substrateFwkName)/\(Self.substrateName)")
+            }
+        }
+    }
+    
+    fileprivate func removeCydiaSubstrateDependencies(_ assetURL: URL) throws {
+        let machO: URL
+        if checkIsBundle(assetURL) {
+            machO = try locateExecutableInBundle(assetURL)
+        } else {
+            machO = assetURL
+        }
+
+        let dylibs = try loadedDylibsOfMachO(machO)
+        for dylib in dylibs {
+            // Check if this dependency is related to CydiaSubstrate or other substrate frameworks
+            let dylibLower = dylib.lowercased()
+            var shouldRemove = false
+            
+            // Check against known substrate names
+            for substrateName in Self.ignoredDylibAndFrameworkNames {
+                if dylibLower.hasSuffix("/\(substrateName.lowercased())") ||
+                   dylibLower == substrateName.lowercased() {
+                    shouldRemove = true
+                    break
+                }
+            }
+            
+            // Also check for common substrate patterns
+            if !shouldRemove {
+                shouldRemove = dylibLower.contains("cydiasubstrate") ||
+                              dylibLower.contains("libsubstrate") ||
+                              dylibLower.contains("libsubstitute") ||
+                              dylibLower.contains("libellekit") ||
+                              (dylibLower.contains("ellekit") && !dylibLower.contains("ellekit.framework"))
+            }
+            
+            if shouldRemove {
+                DDLogInfo("Removing CydiaSubstrate dependency: \(dylib) from \(machO.lastPathComponent)", ddlog: logger)
+                try cmdRemoveLoadCommandDylib(machO, name: dylib)
             }
         }
     }

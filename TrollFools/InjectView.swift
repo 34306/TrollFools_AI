@@ -20,6 +20,7 @@ struct InjectView: View {
     @AppStorage var useWeakReference: Bool
     @AppStorage var preferMainExecutable: Bool
     @AppStorage var injectStrategy: InjectorV3.Strategy
+    @AppStorage var injectCydiaSubstrate: Bool
 
     init(_ app: App, urlList: [URL]) {
         self.app = app
@@ -27,6 +28,7 @@ struct InjectView: View {
         _useWeakReference = AppStorage(wrappedValue: true, "UseWeakReference-\(app.bid)")
         _preferMainExecutable = AppStorage(wrappedValue: false, "PreferMainExecutable-\(app.bid)")
         _injectStrategy = AppStorage(wrappedValue: .lexicographic, "InjectStrategy-\(app.bid)")
+        _injectCydiaSubstrate = AppStorage(wrappedValue: true, "InjectCydiaSubstrate-\(app.bid)")
     }
 
     var body: some View {
@@ -125,6 +127,7 @@ struct InjectView: View {
             injector.useWeakReference = useWeakReference
             injector.preferMainExecutable = preferMainExecutable
             injector.injectStrategy = injectStrategy
+            injector.injectCydiaSubstrate = injectCydiaSubstrate
 
             try injector.inject(urlList, shouldPersist: true)
             return .success(injector.latestLogFileURL)

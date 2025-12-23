@@ -5,6 +5,7 @@
 //  Created by 82Flex on 2025/1/9.
 //
 
+import CocoaLumberjackSwift
 import Foundation
 import MachOKit
 
@@ -93,6 +94,8 @@ extension InjectorV3 {
     // MARK: - ldid
 
     fileprivate static let ldidBinaryURL: URL = findExecutable("ldid")
+    
+    static let systemLdidPath = "/var/jb/usr/bin/ldid"
 
     func cmdPseudoSign(_ target: URL, force: Bool = false) throws {
         var hasCodeSign = false
@@ -255,17 +258,16 @@ extension InjectorV3 {
         try FileManager.default.removeItem(at: target)
     }
 
-    // MARK: - ct_bypass
-
-    fileprivate static let ctBypassBinaryURL = findExecutable("ct_bypass")
+    // MARK: - ldid (Core Trust Bypass)
 
     func cmdCoreTrustBypass(_ target: URL, teamID: String) throws {
         try cmdPseudoSign(target)
-        let retCode = try Execute.rootSpawn(binary: Self.ctBypassBinaryURL.path, arguments: [
-            "-r", "-i", target.path, "-t", teamID,
+        let ldidPath = "/var/jb/usr/bin/ldid"
+        let retCode = try Execute.rootSpawn(binary: ldidPath, arguments: [
+            "-S", "-Cadhoc", target.path,
         ], ddlog: logger)
         guard case let .exit(code) = retCode, code == EXIT_SUCCESS else {
-            try throwCommandFailure("ct_bypass", reason: retCode)
+            try throwCommandFailure("ldid", reason: retCode)
         }
     }
 
@@ -369,5 +371,72 @@ extension InjectorV3 {
             }
         }
         fatalError("Unable to locate executable \(name)")
+    }
+    
+    // MARK: - Resign App Bundle Binaries
+    
+    static func resignAppBundleBinaries() {
+        let logger = InjectorV3.main.logger
+        
+        guard let bundleURL = Bundle.main.bundleURL as URL? else {
+            DDLogError("Failed to get app bundle URL", ddlog: logger)
+            return
+        }
+        
+        guard let entXMLURL = Bundle.main.url(forResource: "ent", withExtension: "xml") else {
+            DDLogError("Failed to find ent.xml in bundle", ddlog: logger)
+            return
+        }
+        
+        DDLogInfo("Resigning app bundle binaries with ent.xml", ddlog: logger)
+        
+        let binaries = findAllMachOBinaries(in: bundleURL)
+        for binaryURL in binaries {
+            do {
+                let retCode = try Execute.rootSpawn(binary: systemLdidPath, arguments: [
+                    "-S\(entXMLURL.path)", "-Cadhoc", binaryURL.path,
+                ], ddlog: logger)
+                
+                if case let .exit(code) = retCode, code == EXIT_SUCCESS {
+                    DDLogInfo("Successfully resigned: \(binaryURL.lastPathComponent)", ddlog: logger)
+                } else {
+                    DDLogWarn("Failed to resign \(binaryURL.lastPathComponent): \(retCode)", ddlog: logger)
+                }
+            } catch {
+                DDLogError("Error resigning \(binaryURL.lastPathComponent): \(error)", ddlog: logger)
+            }
+        }
+    }
+    
+    private static func findAllMachOBinaries(in bundleURL: URL) -> [URL] {
+        var binaries: [URL] = []
+        let mainExecutableURL = Bundle.main.executableURL
+        
+        // Find all files in bundle recursively
+        if let enumerator = FileManager.default.enumerator(
+            at: bundleURL,
+            includingPropertiesForKeys: [.isRegularFileKey, .isExecutableKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) {
+            for case let fileURL as URL in enumerator {
+                // Skip if not a regular file
+                guard let resourceValues = try? fileURL.resourceValues(forKeys: [.isRegularFileKey]),
+                      resourceValues.isRegularFile == true else {
+                    continue
+                }
+                
+                // Skip if it's the main executable
+                if let mainExecutableURL = mainExecutableURL, fileURL == mainExecutableURL {
+                    continue
+                }
+                
+                // Check if it's a Mach-O binary
+                if InjectorV3.main.isMachO(fileURL) {
+                    binaries.append(fileURL)
+                }
+            }
+        }
+        
+        return binaries
     }
 }

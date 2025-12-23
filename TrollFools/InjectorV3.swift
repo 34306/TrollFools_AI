@@ -35,6 +35,7 @@ final class InjectorV3 {
     var useWeakReference: Bool = false
     var preferMainExecutable: Bool = false
     var injectStrategy: Strategy = .lexicographic
+    var injectCydiaSubstrate: Bool = true
 
     let logger: DDLog
     let loggerType: LoggerType
